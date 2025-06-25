@@ -1,0 +1,61 @@
+import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persist } from 'zustand/middleware';
+
+interface CreditCard {
+  id: string;
+  name: string;
+  bank: string;
+  cardNumber: string;
+  limit: number;
+  dueDate: number;
+  statementDate: number;
+  color: string;
+}
+
+interface Payment {
+  id: string;
+  cardId: string;
+  amount: number;
+  date: number;
+  status: 'pending' | 'paid';
+  notes?: string;
+}
+
+interface StoreState {
+  cards: CreditCard[];
+  payments: Payment[];
+  addCard: (card: CreditCard) => void;
+  deleteCard: (id: string) => void;
+  addPayment: (payment: Payment) => void;
+}
+
+export const useCreditCardStore = create<StoreState>()(
+  persist(
+    (set, get) => ({
+      cards: [],
+      payments: [],
+      addCard: (card) =>
+        set({ cards: [...get().cards, card] }),
+      deleteCard: (id) =>
+        set({ cards: get().cards.filter((c) => c.id !== id) }),
+      addPayment: (payment) =>
+        set({ payments: [...get().payments, payment] }),
+    }),
+    {
+      name: 'credit-card-storage',
+      storage: {
+        getItem: async (name) => {
+          const data = await AsyncStorage.getItem(name);
+          return data ?? null;
+        },
+        setItem: async (name, value) => {
+          await AsyncStorage.setItem(name, value);
+        },
+        removeItem: async (name) => {
+          await AsyncStorage.removeItem(name);
+        },
+      },
+    }
+  )
+);
